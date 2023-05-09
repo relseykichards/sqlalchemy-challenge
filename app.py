@@ -24,13 +24,6 @@ Base.prepare(autoload_with=engine)
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 
-# reflect an existing database into a new model
-
-# reflect the tables
-
-
-# Save references to each table
-
 
 # Create our session (link) from Python to the DB
 session = Session(engine)
@@ -40,14 +33,12 @@ session = Session(engine)
 #################################################
 app = Flask(__name__)
 
-
-
 #################################################
 # Flask Routes
 #################################################
 @app.route("/")
 def welcome():
-    """List all available api routes."""
+    # List all available API routes
     return (
         f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
@@ -60,7 +51,6 @@ def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
- 
     results = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date <= '2017-08-23').filter(Measurement.date >= '2016-08-23').order_by(Measurement.date.desc()).all()
 
     session.close()
@@ -77,23 +67,19 @@ def precipitation():
 
 @app.route("/api/v1.0/stations")
 def stations():
-    # Create our session (link) from Python to the DB
+    # Create our session (link) from Python to the DB 
     session = Session(engine)
 
-    """Return a list of all station names"""
-   
+    # Return a list of all station names
     results = session.query(Measurement.station).distinct(Measurement.station).all()
-
     session.close()
 
-    # Convert list of tuples into normal list
     all_stations = list(np.ravel(results))
-
     return jsonify(all_stations)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    # Create our session (link) from Python to the DB
+    # Create our session (link) from Python to the DB and query results
     session = Session(engine)
 
     results = session.query(Measurement.date, Measurement.tobs).filter(Measurement.date <= '2017-08-23').\
@@ -119,7 +105,7 @@ def start_date(start):
     last_year = dt.timedelta(days=365)
     start = start_date-last_year
 
-# Create our session (link) from Python to the DB
+# Create our session (link) from Python to the DB and query results
     session = Session(engine)
 
     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
@@ -130,7 +116,6 @@ def start_date(start):
     return jsonify(starting_date)
 
     
-
 @app.route("/api/v1.0/<start>/<end>")
 def start_end(start,end):
     
@@ -141,7 +126,7 @@ def start_end(start,end):
     start = start_date-last_year
     end = end_date-last_year
 
-    # Create our session (link) from Python to the DB
+    # Create our session (link) from Python to the DB and query results
     session = Session(engine)
     result = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
         filter(Measurement.date >= start).filter(Measurement.date <= end).all()
