@@ -1,5 +1,6 @@
 # Import the dependencies.
 import numpy as np
+import datetime as dt
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -74,8 +75,81 @@ def precipitation():
 
     return jsonify(precip_twelve_months)
 
+@app.route("/api/v1.0/stations")
+def stations():
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
 
+    """Return a list of all station names"""
+   
+    results = session.query(Measurement.station).distinct(Measurement.station).all()
 
+    session.close()
+
+    # Convert list of tuples into normal list
+    all_stations = list(np.ravel(results))
+
+    return jsonify(all_stations)
+
+@app.route("/api/v1.0/tobs")
+def tobs():
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    results = session.query(Measurement.date, Measurement.tobs).filter(Measurement.date <= '2017-08-23').\
+        filter(Measurement.date >= '2016-08-23').filter(Measurement.station == 'USC00519281').order_by(Measurement.date.desc()).all()
+
+    session.close()
+
+    # Create a dictionary from the row data and append to a list 
+    temp_twelve_months = []
+    for date, tobs in results:
+        temp_dict = {}
+        temp_dict["date"] = date
+        temp_dict["tobs"] = tobs
+        temp_twelve_months.append(temp_dict)
+
+    return jsonify(temp_twelve_months)
+
+@app.route("/api/v1.0/<start>")
+def start_date(start):
+
+# establish date input and format
+    start_date= dt.datetime.strptime(start, '%Y-%m-%d')
+    last_year = dt.timedelta(days=365)
+    start = start_date-last_year
+
+# Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).all()
+    session.close()
+
+    starting_date = list(np.ravel(results))
+    return jsonify(starting_date)
+
+    
+
+@app.route("/api/v1.0/<start>/<end>")
+def start_end(start,end):
+    
+    # establish date input and format
+    start_date= dt.datetime.strptime(start, '%Y-%m-%d')
+    end_date= dt.datetime.strptime(end,'%Y-%m-%d')
+    last_year = dt.timedelta(days=365)
+    start = start_date-last_year
+    end = end_date-last_year
+
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+    result = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).filter(Measurement.date <= end).all()
+    
+    session.close()
+    
+    starting_ending = list(np.ravel(result))
+    return jsonify(starting_ending)
 
 
 if __name__ == '__main__':
